@@ -3,12 +3,23 @@ package auth
 import (
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte("signingsecret")
+var jwtSigningSecret []byte
+
+func init() {
+	secret := os.Getenv("JWT_SIGNING_SECRET")
+	if secret == "" {
+		slog.Error("JWT_SIGNING_SECRET environment variable is not set")
+		os.Exit(1)
+	}
+
+	jwtSigningSecret = []byte(secret)
+}
 
 func GenerateUserToken(username string) (string, error) {
 	claims := jwt.MapClaims{
@@ -16,7 +27,7 @@ func GenerateUserToken(username string) (string, error) {
 		"expire":   time.Now().Add(6 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	return token.SignedString(jwtSigningSecret)
 }
 
 const (
@@ -33,13 +44,13 @@ func GenerateAppToken(comment string, duration time.Duration) (string, error) {
 		"expire":  time.Now().Add(duration).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	return token.SignedString(jwtSigningSecret)
 }
 
 func ValidateToken(tokenStr string) (jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (any, error) {
-		return jwtKey, nil
+		return jwtSigningSecret, nil
 	})
 	if err != nil {
 		slog.Error("Failed to validate jwt token", "auth", "user", "err", err)

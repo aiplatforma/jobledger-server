@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/dusansimic/jobledger/internal/auth"
@@ -15,6 +16,21 @@ import (
 )
 
 var templates = template.Must(template.ParseGlob("internal/templates/*.html"))
+var username, password string
+
+func init() {
+	username = os.Getenv("AUTH_USERNAME")
+	if username == "" {
+		slog.Warn("AUTH_USERNAME environment variable is not set, using default 'admin'")
+		username = "admin"
+	}
+
+	password = os.Getenv("AUTH_PASSWORD")
+	if password == "" {
+		slog.Warn("AUTH_PASSWORD environment variable is not set, using default 'admin'")
+		password = "admin"
+	}
+}
 
 type Message struct {
 	IsError   bool
@@ -32,10 +48,10 @@ func LoginPage(w http.ResponseWriter, r *http.Request) {
 
 func LoginForm(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	username := r.FormValue("username")
-	password := r.FormValue("password")
+	formUsername := r.FormValue("username")
+	formPassword := r.FormValue("password")
 
-	if username != "admin" && password != "password" {
+	if formUsername != username && formPassword != password {
 		templates.ExecuteTemplate(w, "login.html", LoginPageData{
 			Message: Message{
 				IsError:   true,
@@ -47,7 +63,7 @@ func LoginForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, _ := auth.GenerateUserToken(username)
+	token, _ := auth.GenerateUserToken(formUsername)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",
 		Value:    token,
