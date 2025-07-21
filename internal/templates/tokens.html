@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="corporate">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/style.css">
+  <title>Tokens</title>
+</head>
+
+<body>
+  <div class="flex gap-4">
+    <div class="flex-none">
+      <ul class="menu">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="#" class="menu-active">Tokens</a></li>
+        <li><a href="/logout" class="text-error">Logout</a></li>
+      </ul>
+    </div>
+
+    <div class="grow">
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-8 mt-2">
+        <div></div>
+        <div>
+          {{ with .Message }}
+          {{ if .IsError }}
+          <div role="alert" class="border-s-4 border-red-700 bg-red-50 p-4 mb-4">
+            <div class="flex items-center gap-2 text-red-700">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                <path fill-rule="evenodd"
+                  d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z"
+                  clip-rule="evenodd" />
+              </svg>
+
+              <strong class="font-medium">Something went wrong</strong>
+            </div>
+
+            <p class="mt-2 text-sm text-red-700">
+              {{ .Content }}
+            </p>
+          </div>
+          {{ end }}
+          {{ end }}
+
+          <form action="/token" method="post">
+            <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+              <legend class="fieldset-legend">Token</legend>
+
+              <label class="label" for="comment">Comment</label>
+              <input type="text" class="input" id="comment" name="comment" placeholder="Comment" />
+
+              <label class="label" for="duration">Duration</label>
+              <select class="select" id="duration" name="duration">
+                <option disabled selected>Pick a duration</option>
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="three months">Three months</option>
+                <option value="six months">Six months</option>
+              </select>
+
+              <button class="btn btn-neutral mt-4">Create</button>
+            </fieldset>
+          </form>
+
+        </div>
+        <div></div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Comment</th>
+              <th>Time left</th>
+              <th>Token</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {{ range .Tokens }}
+            <tr>
+              <td>{{ .Comment }}</td>
+              <td>{{ .TimeLeftFormatted }}</td>
+              <td>{{ .Token }}</td>
+              <td>
+                <button class="btn btn-soft btn-error" onclick="deleteToken('{{ .ID }}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                  </svg>
+                </button>
+              </td>
+            </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function deleteToken(token) {
+      if (confirm('Are you sure you want to delete this token?')) {
+        fetch(`/token/${token}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }).then(response => {
+          if (response.ok) {
+            location.reload();
+          } else {
+            alert('Failed to delete token');
+          }
+        });
+      }
+    }
+  </script>
+</body>
+
+</html>

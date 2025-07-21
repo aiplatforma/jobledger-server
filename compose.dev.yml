@@ -1,0 +1,10 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: jobledger
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    restart: unless-stopped

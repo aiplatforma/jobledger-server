@@ -1,0 +1,26 @@
+{
+	"name": "Go",
+	"image": "mcr.microsoft.com/devcontainers/go:1-1.24-bookworm",
+	"runArgs": [
+		"--add-host=host.docker.internal:host-gateway"
+	],
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {
+			"nodeGypDependencies": false,
+			"installYarnUsingApt": false,
+			"version": "lts",
+			"pnpmVersion": "latest",
+			"nvmVersion": "latest"
+		},
+		"ghcr.io/guiyomh/features/just:0": {
+			"version": "latest"
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-ossdata.vscode-pgsql"
+			]
+		}
+	}
+}

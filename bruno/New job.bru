@@ -1,0 +1,23 @@
+meta {
+  name: New job
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/api/job
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Bruno test job",
+    "type": "docker.build",
+    "state": "notstarted",
+    "metadata": {
+      "a": "something a",
+      "b": "something b"
+    }
+  }
+}

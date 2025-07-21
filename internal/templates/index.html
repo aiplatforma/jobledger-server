@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="corporate">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/style.css">
+  <title>Dashboard</title>
+</head>
+
+<body>
+  <div class="flex gap-4">
+    <div class="flex-none">
+      <ul class="menu">
+        <li><a href="#" class="menu-active">Dashboard</a></li>
+        <li><a href="/tokens">Tokens</a></li>
+        <li><a href="/logout" class="text-error">Logout</a></li>
+      </ul>
+    </div>
+
+    <div class="grow p-4 flex flex-col gap-4">
+      <div class="w-full flex justify-center">
+        <div class="stats shadow">
+          <div class="stat">
+            <div class="stat-title">Total Jobs</div>
+            <div class="stat-value">{{ .NumberJobs }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-title">Pending Jobs</div>
+            <div class="stat-value text-secondary">{{ .PendingJobs }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-title">In Progress Jobs</div>
+            <div class="stat-value text-warning">{{ .InProgressJobs }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-title">Completed Jobs</div>
+            <div class="stat-value text-success">{{ .CompletedJobs }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Type</th>
+              <th>State</th>
+              <th>Created Time</th>
+              <th>Started Time</th>
+              <th>Completed Time</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {{ range .Jobs }}
+            <tr>
+              <td>#{{ .ID }}</td>
+              <td>{{ .Name }}</td>
+              <td>{{ .Type }}</td>
+              <td>
+                {{ with (eq .State "complete" ) }}
+                <div class="badge badge-success">
+                  Complete
+                </div>
+                {{ end }}
+                {{ with (eq .State "inprogress" ) }}
+                <div class="badge badge-warning">
+                  In progress
+                </div>
+                {{ end }}
+                {{ with (eq .State "notstarted" ) }}
+                <div class="badge badge-secondary">
+                  Not started
+                </div>
+                {{ end }}
+              </td>
+              <td>{{ .CreatedAt.Format "2006-01-02 15:04:05" }}</td>
+              <td>{{ with .StartedAt }}{{ .Format "2006-01-02 15:04:05" }}{{ end }}</td>
+              <td>{{ with .CompletedAt }}{{ .Format "2006-01-02 15:04:05" }}{{ end }}</td>
+            </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
