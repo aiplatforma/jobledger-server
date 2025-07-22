@@ -138,10 +138,11 @@ func Dashboard(db *sqlx.DB) http.HandlerFunc {
 }
 
 type TokenData struct {
-	ID       int
-	Comment  string
-	TimeLeft time.Duration
-	Token    string
+	ID              int
+	Comment         string
+	TimeLeft        time.Duration
+	DurationExpired bool
+	Token           string
 }
 
 func (td TokenData) TimeLeftFormatted() string {
@@ -180,10 +181,11 @@ func renderTokensPage(w http.ResponseWriter, tokens []models.Token, message Mess
 	tokensData := make([]TokenData, len(tokens))
 	for i, token := range tokens {
 		tokensData[i] = TokenData{
-			ID:       token.ID,
-			Comment:  token.Comment,
-			TimeLeft: time.Until(token.CreatedAt.Add(token.Duration)),
-			Token:    token.Token,
+			ID:              token.ID,
+			Comment:         token.Comment,
+			TimeLeft:        time.Until(token.CreatedAt.Add(token.Duration)),
+			DurationExpired: time.Until(token.CreatedAt.Add(token.Duration)) <= 0,
+			Token:           token.Token,
 		}
 	}
 

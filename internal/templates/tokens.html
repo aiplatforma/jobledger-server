@@ -82,7 +82,13 @@
             {{ range .Tokens }}
             <tr>
               <td>{{ .Comment }}</td>
-              <td>{{ .TimeLeftFormatted }}</td>
+              <td>
+                {{ if .DurationExpired }}
+                <span class="text-error">Expired</span>
+                {{ else }}
+                <span>{{ .TimeLeftFormatted }}</span>
+                {{ end }}
+              </td>
               <td>{{ .Token }}</td>
               <td>
                 <button class="btn btn-soft btn-error" onclick="deleteToken('{{ .ID }}')">
