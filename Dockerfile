@@ -37,3 +37,5 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 COPY --from=server-builder /job-ledger/job-ledger /app/job-ledger
 COPY --from=node-builder /job-ledger/static/ /app/static/
 COPY internal/templates/*.html /app/internal/templates/
+
+ENTRYPOINT ["/app/job-ledger"]
