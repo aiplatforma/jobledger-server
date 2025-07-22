@@ -1,3 +1,5 @@
+set dotenv-filename := ".env.dev"
+
 build-css:
   cd internal/templates && pnpm run css
 
