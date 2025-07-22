@@ -5,3 +5,6 @@ build-css:
 
 run: build-css
   go run cmd/server/main.go
+
+docker:
+  docker build --progress plain -t jobledger-server -f Dockerfile .
