@@ -19,7 +19,8 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"ms-ossdata.vscode-pgsql"
+				"ms-ossdata.vscode-pgsql",
+				"github.vscode-github-actions"
 			]
 		}
 	}
