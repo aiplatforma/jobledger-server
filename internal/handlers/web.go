@@ -99,7 +99,7 @@ func Dashboard(db *sqlx.DB) http.HandlerFunc {
 		jobs := []models.Job{}
 
 		// get all jobs from the database
-		err := db.Select(&jobs, "SELECT * FROM job")
+		err := db.Select(&jobs, "SELECT * FROM job ORDER BY created_at DESC")
 		if err != nil {
 			// if there is an error, log it and return 500 Internal Server Error
 			slog.Error("Failed to query jobs", "handler", "Dashboard", "err", err)
