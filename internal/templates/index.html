@@ -34,6 +34,10 @@
             <div class="stat-value text-warning">{{ .InProgressJobs }}</div>
           </div>
           <div class="stat">
+            <div class="stat-title">Failed jobs</div>
+            <div class="stat-value text-error">{{ .FailedJobs }}</div>
+          </div>
+          <div class="stat">
             <div class="stat-title">Completed Jobs</div>
             <div class="stat-value text-success">{{ .CompletedJobs }}</div>
           </div>
@@ -64,6 +68,11 @@
                 {{ with (eq .State "complete" ) }}
                 <div class="badge badge-success">
                   Complete
+                </div>
+                {{ end }}
+                {{ with (eq .State "fail" ) }}
+                <div class="badge badge-error">
+                  Failed
                 </div>
                 {{ end }}
                 {{ with (eq .State "inprogress" ) }}

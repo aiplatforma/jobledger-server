@@ -90,6 +90,7 @@ type DashboardData struct {
 	NumberJobs     int
 	PendingJobs    int
 	InProgressJobs int
+	FailedJobs     int
 	CompletedJobs  int
 }
 
@@ -114,6 +115,7 @@ func Dashboard(db *sqlx.DB) http.HandlerFunc {
 		numberJobs := len(jobs)
 		pendingJobs := 0
 		inProgressJobs := 0
+		failedJobs := 0
 		completedJobs := 0
 		for _, job := range jobs {
 			switch job.State {
@@ -121,6 +123,8 @@ func Dashboard(db *sqlx.DB) http.HandlerFunc {
 				pendingJobs++
 			case "inprogress":
 				inProgressJobs++
+			case "fail":
+				failedJobs++
 			case "complete":
 				completedJobs++
 			}
@@ -132,6 +136,7 @@ func Dashboard(db *sqlx.DB) http.HandlerFunc {
 			NumberJobs:     numberJobs,
 			PendingJobs:    pendingJobs,
 			InProgressJobs: inProgressJobs,
+			FailedJobs:     failedJobs,
 			CompletedJobs:  completedJobs,
 		})
 	}
