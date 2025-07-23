@@ -50,7 +50,6 @@ func CreateJob(db *sqlx.DB) http.HandlerFunc {
 	type JobPayload struct {
 		Name     string             `json:"name"`
 		Type     string             `json:"type"`
-		State    string             `json:"state"`
 		Metadata models.MetadataMap `json:"metadata"`
 	}
 
@@ -66,7 +65,7 @@ func CreateJob(db *sqlx.DB) http.HandlerFunc {
 
 		query := `
 			INSERT INTO job (name, type, state, created_at, started_at, completed_at, metadata)
-			VALUES (:name, :type, :state, CURRENT_TIMESTAMP, NULL, NULL, :metadata);
+			VALUES (:name, :type, 'notstarted', CURRENT_TIMESTAMP, NULL, NULL, :metadata);
 		`
 
 		_, err = db.NamedExec(query, &job)
