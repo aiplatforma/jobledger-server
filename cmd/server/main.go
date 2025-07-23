@@ -33,6 +33,7 @@ func main() {
 		r.Post("/job", handlers.CreateJob(database))
 		r.Post("/job/{id}/started", handlers.SetJobState(database, "inprogress"))
 		r.Post("/job/{id}/complete", handlers.SetJobState(database, "complete"))
+		r.Post("/job/{id}/fail", handlers.SetJobState(database, "fail"))
 	})
 
 	r.Get("/login", handlers.LoginPage)
