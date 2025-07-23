@@ -2,16 +2,23 @@ package db
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
-func Init() *sqlx.DB {
-	// Connection string for PostgreSQL
-	// Format: "postgres://username:password@localhost/dbname?sslmode=disable"
-	connStr := "postgres://postgres:postgres@host.docker.internal:5432/jobledger?sslmode=disable"
+var connStr string
 
+func init() {
+	connStr = os.Getenv("DATABASE_URL")
+	if connStr == "" {
+		slog.Error("Database connection string is not set. Please set the DATABASE_URL environment variable.")
+		os.Exit(1)
+	}
+}
+
+func Init() *sqlx.DB {
 	db, err := sqlx.Open("postgres", connStr)
 	if err != nil {
 		slog.Error("Could not connect to database", "err", err)
