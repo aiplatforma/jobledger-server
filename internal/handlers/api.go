@@ -83,11 +83,21 @@ func SetJobState(db *sqlx.DB, state string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 
-		query := `
-			UPDATE job
-			SET state = $1, started_at = CURRENT_TIMESTAMP
-			WHERE id = $2;
-		`
+		var query string
+
+		if state == "inprogress" {
+			query = `
+				UPDATE job
+				SET state = $1, started_at = CURRENT_TIMESTAMP
+				WHERE id = $2;
+			`
+		} else {
+			query = `
+				UPDATE job
+				SET state = $1, completed_at = CURRENT_TIMESTAMP
+				WHERE id = $2;
+			`
+		}
 
 		_, err := db.Exec(query, state, id)
 		if err != nil {
