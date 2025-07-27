@@ -16,7 +16,16 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var templates = template.Must(template.ParseGlob("internal/templates/*.html"))
+var templateFuncMap = template.FuncMap{
+	"iterate": func(n int) []int {
+		r := make([]int, n)
+		for i := range r {
+			r[i] = i + 1
+		}
+		return r
+	},
+}
+var templates = template.Must(template.New("").Funcs(templateFuncMap).ParseGlob("internal/templates/*.html"))
 var username, password string
 
 func init() {
@@ -125,14 +134,46 @@ type PaginationData struct {
 	TotalPages int
 }
 
-type DashboardData struct {
-	Jobs           []JobData
+type JobStats struct {
 	NumberJobs     int
 	PendingJobs    int
 	InProgressJobs int
 	FailedJobs     int
 	CompletedJobs  int
-	Pagination     PaginationData
+}
+
+type DashboardData struct {
+	Jobs       []JobData
+	Stats      JobStats
+	Pagination PaginationData
+}
+
+func getJobStats(db *sqlx.DB) (*JobStats, error) {
+	stats := JobStats{}
+
+	// Query for getting pending, in-progress, failed, and completed jobs and total number of jobs
+	err := db.Get(&stats.PendingJobs, "SELECT COUNT(*) FROM job WHERE state = 'notstarted'")
+	if err != nil {
+		return nil, fmt.Errorf("failed to count pending jobs: %w", err)
+	}
+	err = db.Get(&stats.InProgressJobs, "SELECT COUNT(*) FROM job WHERE state = 'inprogress'")
+	if err != nil {
+		return nil, fmt.Errorf("failed to count in-progress jobs: %w", err)
+	}
+	err = db.Get(&stats.FailedJobs, "SELECT COUNT(*) FROM job WHERE state = 'fail'")
+	if err != nil {
+		return nil, fmt.Errorf("failed to count failed jobs: %w", err)
+	}
+	err = db.Get(&stats.CompletedJobs, "SELECT COUNT(*) FROM job WHERE state = 'complete'")
+	if err != nil {
+		return nil, fmt.Errorf("failed to count completed jobs: %w", err)
+	}
+	err = db.Get(&stats.NumberJobs, "SELECT COUNT(*) FROM job")
+	if err != nil {
+		return nil, fmt.Errorf("failed to count total jobs: %w", err)
+	}
+
+	return &stats, nil
 }
 
 func Dashboard(db *sqlx.DB) http.HandlerFunc {
@@ -207,33 +248,18 @@ func Dashboard(db *sqlx.DB) http.HandlerFunc {
 			}
 		}
 
-		// count jobs by state
-		numberJobs := len(jobs)
-		pendingJobs := 0
-		inProgressJobs := 0
-		failedJobs := 0
-		completedJobs := 0
-		for _, job := range jobs {
-			switch job.State {
-			case "notstarted":
-				pendingJobs++
-			case "inprogress":
-				inProgressJobs++
-			case "fail":
-				failedJobs++
-			case "complete":
-				completedJobs++
-			}
+		// get job statistics
+		stats, err := getJobStats(db)
+		if err != nil {
+			slog.Error("Failed to get job statistics", "handler", "Dashboard", "err", err)
+			http.Error(w, "failed to get job statistics", http.StatusInternalServerError)
+			return
 		}
 
 		// otherwise render the dashboard page with the jobs
 		templates.ExecuteTemplate(w, "index.html", DashboardData{
-			Jobs:           jobsData,
-			NumberJobs:     numberJobs,
-			PendingJobs:    pendingJobs,
-			InProgressJobs: inProgressJobs,
-			FailedJobs:     failedJobs,
-			CompletedJobs:  completedJobs,
+			Jobs:  jobsData,
+			Stats: *stats,
 			Pagination: PaginationData{
 				Page:       page,
 				PageSize:   pageSize,

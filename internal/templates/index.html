@@ -20,6 +20,7 @@
 
     <div class="grow p-4 flex flex-col gap-4">
       <div class="w-full flex justify-center">
+        {{ with .Stats }}
         <div class="stats shadow">
           <div class="stat">
             <div class="stat-title">Total Jobs</div>
@@ -42,6 +43,7 @@
             <div class="stat-value text-success">{{ .CompletedJobs }}</div>
           </div>
         </div>
+        {{ end }}
       </div>
 
       <div class="overflow-x-auto">
@@ -103,6 +105,16 @@
             {{ end }}
           </tbody>
         </table>
+      </div>
+
+      <div class="w-full flex justify-center">
+        {{ with .Pagination }}
+        <div class="join">
+          {{ range $page := iterate .TotalPages }}
+          <button class="join-item btn" onclick="location.href='?page={{ $page }}'">{{ $page }}</button>
+          {{ end }}
+        </div>
+        {{ end }}
       </div>
     </div>
   </div>
