@@ -111,6 +111,37 @@ func Dashboard(db *sqlx.DB) http.HandlerFunc {
 			return
 		}
 
+		jobsData := make([]JobData, len(jobs))
+		for i, job := range jobs {
+			jobsData[i] = JobData{
+				ID:    job.ID,
+				Name:  job.Name,
+				Type:  job.Type,
+				State: job.State,
+			}
+
+			if job.CompletedAt == nil {
+				if job.StartedAt == nil {
+					jobsData[i].Duration = DurationData{
+						Duration: nil,
+						Expired:  false,
+					}
+				} else {
+					duration := time.Since(*job.StartedAt)
+					jobsData[i].Duration = DurationData{
+						Duration: &duration,
+						Expired:  false,
+					}
+				}
+			} else {
+				duration := job.CompletedAt.Sub(*job.StartedAt)
+				jobsData[i].Duration = DurationData{
+					Duration: &duration,
+					Expired:  false,
+				}
+			}
+		}
+
 		// count jobs by state
 		numberJobs := len(jobs)
 		pendingJobs := 0
@@ -132,7 +163,7 @@ func Dashboard(db *sqlx.DB) http.HandlerFunc {
 
 		// otherwise render the dashboard page with the jobs
 		templates.ExecuteTemplate(w, "index.html", DashboardData{
-			Jobs:           jobs,
+			Jobs:           jobsData,
 			NumberJobs:     numberJobs,
 			PendingJobs:    pendingJobs,
 			InProgressJobs: inProgressJobs,
@@ -167,6 +198,13 @@ func (td TokenData) TimeLeftFormatted() string {
 	}
 }
 
+type TokenData struct {
+	ID       int
+	Comment  string
+	Duration DurationData
+	Token    string
+}
+
 type TokensPageData struct {
 	Message Message
 	Tokens  []TokenData
@@ -185,12 +223,15 @@ func queryTokens(db *sqlx.DB) ([]models.Token, error) {
 func renderTokensPage(w http.ResponseWriter, tokens []models.Token, message Message) {
 	tokensData := make([]TokenData, len(tokens))
 	for i, token := range tokens {
+		duration := time.Until(token.CreatedAt.Add(token.Duration))
 		tokensData[i] = TokenData{
-			ID:              token.ID,
-			Comment:         token.Comment,
-			TimeLeft:        time.Until(token.CreatedAt.Add(token.Duration)),
-			DurationExpired: time.Until(token.CreatedAt.Add(token.Duration)) <= 0,
-			Token:           token.Token,
+			ID:      token.ID,
+			Comment: token.Comment,
+			Duration: DurationData{
+				Duration: &duration,
+				Expired:  duration <= 0,
+			},
+			Token: token.Token,
 		}
 	}
 
