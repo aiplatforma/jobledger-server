@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/dusansimic/jobledger/internal/auth"
@@ -85,21 +86,85 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
+type DurationData struct {
+	Duration *time.Duration
+	Expired  bool
+}
+
+func (dd DurationData) DurationFormatted() string {
+	if dd.Duration == nil {
+		return "N/A"
+	}
+	totalDays := int(dd.Duration.Hours() / 24)
+	months := totalDays / 30
+	days := totalDays % 30
+	hours := int(dd.Duration.Hours()) % 24
+	minutes := int(dd.Duration.Minutes()) % 60
+	seconds := int(dd.Duration.Seconds()) % 60
+
+	if months > 0 {
+		return fmt.Sprintf("%dm %dd %02d:%02d:%02d", months, days, hours, minutes, seconds)
+	} else if days > 0 {
+		return fmt.Sprintf("%dd %02d:%02d:%02d", days, hours, minutes, seconds)
+	} else {
+		return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+	}
+}
+
+type JobData struct {
+	ID       int
+	Name     string
+	Type     string
+	State    string
+	Duration DurationData
+}
+
+type PaginationData struct {
+	Page       int
+	PageSize   int
+	TotalPages int
+}
+
 type DashboardData struct {
-	Jobs           []models.Job
+	Jobs           []JobData
 	NumberJobs     int
 	PendingJobs    int
 	InProgressJobs int
 	FailedJobs     int
 	CompletedJobs  int
+	Pagination     PaginationData
 }
 
 func Dashboard(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Parse pagination parameters
+		page := 1
+		pageSize := 15
+
+		if pageParam := r.URL.Query().Get("page"); pageParam != "" {
+			if p, err := strconv.Atoi(pageParam); err == nil && p > 0 {
+				page = p
+			}
+		}
+
+		offset := (page - 1) * pageSize
+
+		// Get total number of jobs for pagination
+		var totalJobs int
+		err := db.Get(&totalJobs, "SELECT COUNT(*) FROM job")
+		if err != nil {
+			slog.Error("Failed to count jobs", "handler", "Dashboard", "err", err)
+			http.Error(w, "failed to count jobs", http.StatusInternalServerError)
+			return
+		}
+
+		// Calculate total pages
+		totalPages := (totalJobs + pageSize - 1) / pageSize
+
 		jobs := []models.Job{}
 
 		// get all jobs from the database
-		err := db.Select(&jobs, "SELECT * FROM job ORDER BY created_at DESC")
+		err = db.Select(&jobs, "SELECT * FROM job ORDER BY created_at DESC LIMIT $1 OFFSET $2", pageSize, offset)
 		if err != nil {
 			// if there is an error, log it and return 500 Internal Server Error
 			slog.Error("Failed to query jobs", "handler", "Dashboard", "err", err)
@@ -169,32 +234,27 @@ func Dashboard(db *sqlx.DB) http.HandlerFunc {
 			InProgressJobs: inProgressJobs,
 			FailedJobs:     failedJobs,
 			CompletedJobs:  completedJobs,
+			Pagination: PaginationData{
+				Page:       page,
+				PageSize:   pageSize,
+				TotalPages: totalPages,
+			},
 		})
 	}
 }
 
-type TokenData struct {
-	ID              int
-	Comment         string
-	TimeLeft        time.Duration
-	DurationExpired bool
-	Token           string
-}
+func JobPage(db *sqlx.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		jobID := chi.URLParam(r, "id")
+		job := models.Job{}
+		err := db.Get(&job, "SELECT * FROM job WHERE id = $1", jobID)
+		if err != nil {
+			slog.Error("Failed to query job", "handler", "JobPage", "id", jobID, "err", err)
+			http.Error(w, "job not found", http.StatusNotFound)
+			return
+		}
 
-func (td TokenData) TimeLeftFormatted() string {
-	totalDays := int(td.TimeLeft.Hours() / 24)
-	months := totalDays / 30
-	days := totalDays % 30
-	hours := int(td.TimeLeft.Hours()) % 24
-	minutes := int(td.TimeLeft.Minutes()) % 60
-	seconds := int(td.TimeLeft.Seconds()) % 60
-
-	if months > 0 {
-		return fmt.Sprintf("%dm %dd %02d:%02d:%02d", months, days, hours, minutes, seconds)
-	} else if days > 0 {
-		return fmt.Sprintf("%dd %02d:%02d:%02d", days, hours, minutes, seconds)
-	} else {
-		return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+		templates.ExecuteTemplate(w, "job.html", job)
 	}
 }
 
