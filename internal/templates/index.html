@@ -111,8 +111,11 @@
         {{ with .Pagination }}
         <div class="join">
           {{ range $page := iterate .TotalPages }}
-          <button class="join-item btn" onclick="location.href='?page={{ $page }}'">{{ $page }}</button>
-          {{ end }}
+          <button class="join-item btn {{ with (eq $page $.Pagination.Page) }}btn-active{{ end }}"
+            onclick="location.href='?page={{ $page }}'">
+            {{ $page }}
+            </buton>
+            {{ end }}
         </div>
         {{ end }}
       </div>
