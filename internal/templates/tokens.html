@@ -82,10 +82,12 @@
             <tr>
               <td>{{ .Comment }}</td>
               <td>
-                {{ if .DurationExpired }}
+                {{ with .Duration }}
+                {{ if .Expired }}
                 <span class="text-error">Expired</span>
                 {{ else }}
-                <span>{{ .TimeLeftFormatted }}</span>
+                <span>{{ .DurationFormatted }}</span>
+                {{ end }}
                 {{ end }}
               </td>
               <td class="flex gap-2">
